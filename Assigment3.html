@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Highest and lowest house prices in Tampines for the last six months of 2024</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>     
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #e6f7ff; 
+        flex-direction: column; 
+        text-align: center;
+      svg {
+        display: block; 
+        margin-top: 20px; 
+      }
+      h1 {
+        font-size: 24px; 
+        font-weight: bold; 
+      }
+      p {
+        margin: 10px 0; 
+      }
+      .line {
+        fill: none;
+        stroke: steelblue;
+        stroke-width: 3px; 
+      }
+      .line-orange {
+        fill: none;
+        stroke: orange;
+        stroke-width: 3px; 
+      }
+      .axis-x path,
+      .axis-y path {
+        fill: none;
+        stroke: black;
+        shape-rendering: crispEdges;
+      }
+      .axis-x text,
+      .axis-y text {
+        font-size: 12px;
+      }
+      .legend {
+        font-size: 14px;
+      }
+      .legend text {
+        fill: black;
+      }
+      .legend rect {
+        width: 20px;
+        height: 20px;
+        stroke: black;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Highest and lowest house prices in Tampines for the last six months of 2024</h1>
+    <p>He JianChi</p>
+    <div>This analysis compares the highest and lowest prices of resale HDB flats in Tampines since May 2024.</div>
+    <div>Through the analysis and charts, we hope to show the recent price range and changes of resale flats in the same area.</div>
+    <div>which will help us to better determine the price of resale flats in the area.</div>
+    <svg width="800" height="400"></svg>
+    <div class="legend">
+      <svg>
+        <rect x="10" y="10" width="20" height="20" style="fill: steelblue;"></rect>
+        <text x="40" y="20">Highest Price</text>
+        <rect x="10" y="30" width="20" height="20" style="fill: orange;"></rect>
+        <text x="40" y="40">Lowest Price</text>
+      </svg>
+    </div>
+    <script>
+      var svg = d3.select("svg"),
+          margin = {top: 20, right: 20, bottom: 30, left: 50},
+          width = +svg.attr("width") - margin.left - margin.right,
+          height = +svg.attr("height") - margin.top - margin.bottom;
+
+      var x = d3.scaleBand()
+          .rangeRound([0, width])
+          .padding(0.1)
+          .align(0.5);
+
+      var y = d3.scaleLinear()
+          .rangeRound([height, 0]);
+
+      var data = [
+        { date: "May", maxPrice: 900000, minPrice: 355000 },
+        { date: "June", maxPrice: 1140000, minPrice: 425000 },
+        { date: "July", maxPrice: 840000, minPrice: 363000 },
+        { date: "August", maxPrice: 968888, minPrice: 357000 },
+        { date: "September", maxPrice: 1038000, minPrice: 350000 },
+        { date: "October", maxPrice: 990000, minPrice: 600000 },
+        { date: "November", maxPrice: 1028000, minPrice: 600000 },
+      ];
+
+      x.domain(data.map(function(d) { return d.date; }));
+      y.domain([0, d3.max(data, function(d) { return Math.max(d.maxPrice, d.minPrice); })]);
+
+      var lineMax = d3.line()
+          .x(function(d) { return x(d.date) + x.bandwidth() / 2; })
+          .y(function(d) { return y(d.maxPrice); });
+
+      var lineMin = d3.line()
+          .x(function(d) { return x(d.date) + x.bandwidth() / 2; })
+          .y(function(d) { return y(d.minPrice); });
+
+      svg.append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        .append("path")
+          .datum(data)
+          .attr("class", "line")
+          .attr("d", lineMax)
+          .transition() // 
+          .duration(3000) // 
+          .attrTween("stroke-dasharray", function() {
+            return function(t) {
+              var interpolate = d3.interpolateArray([0, width], [width, 0]);
+              return interpolate(t);
+            };
+          });
+
+      svg.append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        .append("path")
+          .datum(data)
+          .attr("class", "line line-orange")
+          .attr("d", lineMin)
+          .transition() // 
+          .duration(3000) // 
+          .attrTween("stroke-dasharray", function() {
+            return function(t) {
+              var interpolate = d3.interpolateArray([0, width], [width, 0]);
+              return interpolate(t);
+            };
+          });
+
+      svg.append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        .append("g")
+          .attr("class", "axis axis-x")
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(x));
+
+      svg.append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        .append("g")
+          .attr("class", "axis axis-y")
+          .call(d3.axisLeft(y))
+        .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", ".71em")
+          .style("text-anchor", "end")
+          .text("Price");
+
+      // 
+      svg.selectAll(".line")
+        .on("mouseover", function(event, d) {
+          d3.select(this)
+            .style("stroke-width", "5px"); // 
+        })
+        .on("mouseout", function(event, d) {
+          d3.select(this)
+            .style("stroke-width", "3px"); // 
+        });
+    </script>
+  </body>
+</html>
