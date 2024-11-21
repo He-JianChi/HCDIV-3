@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Highest and Lowest House Prices in Tampines</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #e6f7ff;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            position: relative;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .signature {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            border: 2px solid black;
+            padding: 5px 10px;
+            font-size: 14px;
+            font-weight: bold;
+            background-color: white;
+            z-index: 10;
+        }
+        svg {
+            display: block;
+            margin: 20px auto;
+        }
+        .line {
+            fill: none;
+            stroke-width: 2.5px;
+        }
+        .line-high {
+            stroke: steelblue;
+        }
+        .line-low {
+            stroke: orange;
+        }
+        .dot {
+            fill: white;
+            stroke-width: 2px;
+        }
+        .dot-high {
+            stroke: steelblue;
+        }
+        .dot-low {
+            stroke: orange;
+        }
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+        .axis-x text,
+        .axis-y text {
+            font-size: 12px;
+        }
+        .text-box {
+            width: 70%;
+            border: 2px solid black;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: white;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            line-height: 1.5;
+        }
+        .data-source {
+            position: fixed;
+            right: 10px;
+            bottom: 10px;
+            border: 2px solid black;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            font-family: "Courier New", Courier, monospace;
+            background-color: white;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <h1>Highest and Lowest House Prices in Tampines (Last 6 Months of 2024)</h1>
+    <div class="signature">HeJianChi</div>
+    <svg width="800" height="400"></svg>
+    <div class="data-source">This data by data.gov.sg</div>
+    <div class="text-box">
+        This analysis compares the highest and lowest prices of resale HDB flats in Tampines since May 2024.
+    </div>
+    <div class="text-box">
+        Through the analysis and charts, we hope to show the recent price range and changes of resale flats 
+        in the same area, which will help us to better determine the price of resale flats in the area.
+    </div>
+
+    <script>
+        const svg = d3.select("svg"),
+              margin = { top: 20, right: 30, bottom: 50, left: 60 },
+              width = +svg.attr("width") - margin.left - margin.right,
+              height = +svg.attr("height") - margin.top - margin.bottom;
+
+        const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const data = [
+            { date: "May", maxPrice: 900000, minPrice: 355000 },
+            { date: "June", maxPrice: 1140000, minPrice: 425000 },
+            { date: "July", maxPrice: 840000, minPrice: 363000 },
+            { date: "August", maxPrice: 968888, minPrice: 357000 },
+            { date: "September", maxPrice: 1038000, minPrice: 350000 },
+            { date: "October", maxPrice: 990000, minPrice: 600000 },
+            { date: "November", maxPrice: 1028000, minPrice: 600000 },
+        ];
+
+        const x = d3.scaleBand()
+                    .domain(data.map(d => d.date))
+                    .range([0, width])
+                    .padding(0.2);
+
+        const y = d3.scaleLinear()
+                    .domain([0, d3.max(data, d => Math.max(d.maxPrice, d.minPrice))])
+                    .nice()
+                    .range([height, 0]);
+
+        // Axes
+        g.append("g")
+         .attr("class", "axis-x")
+         .attr("transform", `translate(0,${height})`)
+         .call(d3.axisBottom(x));
+
+        g.append("g")
+         .attr("class", "axis-y")
+         .call(d3.axisLeft(y).tickFormat(d => `$${d / 1000}k`));
+
+        // Lines with animation
+        const lineHigh = d3.line()
+                           .x(d => x(d.date) + x.bandwidth() / 2)
+                           .y(d => y(d.maxPrice))
+                           .curve(d3.curveMonotoneX);
+
+        const lineLow = d3.line()
+                          .x(d => x(d.date) + x.bandwidth() / 2)
+                          .y(d => y(d.minPrice))
+                          .curve(d3.curveMonotoneX);
+
+        g.append("path")
+         .datum(data)
+         .attr("class", "line line-high")
+         .attr("d", lineHigh)
+         .attr("stroke-dasharray", function () {
+             return this.getTotalLength();
+         })
+         .attr("stroke-dashoffset", function () {
+             return this.getTotalLength();
+         })
+         .transition()
+         .duration(2000)
+         .ease(d3.easeLinear)
+         .attr("stroke-dashoffset", 0);
+
+        g.append("path")
+         .datum(data)
+         .attr("class", "line line-low")
+         .attr("d", lineLow)
+         .attr("stroke-dasharray", function () {
+             return this.getTotalLength();
+         })
+         .attr("stroke-dashoffset", function () {
+             return this.getTotalLength();
+         })
+         .transition()
+         .duration(2000)
+         .ease(d3.easeLinear)
+         .attr("stroke-dashoffset", 0);
+
+        // Dots with animation
+        const dots = g.selectAll(".dot")
+                      .data(data)
+                      .enter()
+                      .append("g")
+                      .attr("class", "dot-group");
+
+        dots.append("circle")
+            .attr("class", "dot dot-high")
+            .attr("cx", d => x(d.date) + x.bandwidth() / 2)
+            .attr("cy", d => y(d.maxPrice))
+            .attr("r", 0)
+            .transition()
+            .delay((d, i) => i * 300)
+            .duration(500)
+            .attr("r", 5);
+
+        dots.append("circle")
+            .attr("class", "dot dot-low")
+            .attr("cx", d => x(d.date) + x.bandwidth() / 2)
+            .attr("cy", d => y(d.minPrice))
+            .attr("r", 0)
+            .transition()
+            .delay((d, i) => i * 300)
+            .duration(500)
+            .attr("r", 5);
+
+        // Labels
+        dots.append("text")
+            .attr("x", d => x(d.date) + x.bandwidth() / 2)
+            .attr("y", d => y(d.maxPrice) - 10)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "12px")
+            .text(d => `$${d.maxPrice}`);
+
+        dots.append("text")
+            .attr("x", d => x(d.date) + x.bandwidth() / 2)
+            .attr("y", d => y(d.minPrice) + 15)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "12px")
+            .text(d => `$${d.minPrice}`);
+    </script>
+</body>
+</html>
